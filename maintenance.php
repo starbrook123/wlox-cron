@@ -7,10 +7,27 @@ $CFG->session_active = 1;
 $CFG->in_cron = 1;
 
 // get 24 hour BTC volume
-$sql = "SELECT IFNULL(SUM(btc),0) AS total_btc_traded FROM transactions WHERE `date` >= DATE_SUB(DATE_ADD(NOW(), INTERVAL ".((($CFG->timezone_offset)/60)/60)." HOUR), INTERVAL 1 DAY) LIMIT 0,1";
+$now = 'DATE_ADD(NOW(), INTERVAL '.((($CFG->timezone_offset)/60)/60).' HOUR)';
+$sql = "SELECT IFNULL(SUM(btc),0) AS btc_24h, IFNULL(SUM(IF(transaction_type != {$CFG->transactions_buy_id},btc,0)),0) AS btc_24h_s, IFNULL(SUM(IF(transaction_type = {$CFG->transactions_buy_id},btc,0)),0) AS btc_24h_b, IFNULL(SUM(IF(`date` >= DATE_SUB($now, INTERVAL 1 HOUR),btc,0)),0) AS btc_1h, IFNULL(SUM(IF(transaction_type != {$CFG->transactions_buy_id} AND `date` >= DATE_SUB($now, INTERVAL 1 HOUR),btc,0)),0) AS btc_1h_s, IFNULL(SUM(IF(transaction_type = {$CFG->transactions_buy_id} AND `date` >= DATE_SUB($now, INTERVAL 1 HOUR),btc,0)),0) AS btc_1h_b FROM transactions WHERE `date` >= DATE_SUB($now, INTERVAL 1 DAY) LIMIT 0,1";
 $result = db_query_array($sql);
-$total_btc_traded = ($result[0]['total_btc_traded']) ? $result[0]['total_btc_traded'] : '0';
-db_update('status',1,array('btc_24h'=>$total_btc_traded));
+if ($result) {
+	$btc_24h = $result[0]['btc_24h'];
+	$btc_24h_s = $result[0]['btc_24h_s'];
+	$btc_24h_b = $result[0]['btc_24h_b'];
+	$btc_1h = $result[0]['btc_1h'];
+	$btc_1h_s = $result[0]['btc_1h_s'];
+	$btc_1h_b = $result[0]['btc_1h_b'];
+}
+else {
+	$btc_24h = '0';
+	$btc_24h_s = '0';
+	$btc_24h_b = '0';
+	$btc_1h = '0';
+	$btc_1h_s = '0';
+	$btc_1h_b = '0';
+}
+
+db_update('status',1,array('btc_24h'=>$btc_24h,'btc_24h_s'=>$btc_24h_s,'btc_24h_b'=>$btc_24h_b,'btc_1h'=>$btc_1h,'btc_1h_s'=>$btc_1h_s,'btc_1h_b'=>$btc_1h_b));
 
 // determine users' monthly volume
 $sql = 'SELECT id, global_btc, from_usd, to_usd FROM fee_schedule ORDER BY global_btc ASC, from_usd ASC';
@@ -31,7 +48,7 @@ if ($result && count($result) > 1) {
 	if ($volumes) {
 		foreach ($volumes as $volume) {
 			foreach ($result as $row) {
-				$global_fc_id = ($row['global_btc'] <= $total_btc_traded) ? $row['id'] : $global_fc_id;
+				$global_fc_id = ($row['global_btc'] <= $btc_24h) ? $row['id'] : $global_fc_id;
 				$fee_schedule = ($row['from_usd'] <= $volume['volume']) ? $row['id'] : $fee_schedule;
 			}
 			$fee_schedule = ($fee_schedule >= $global_fc_id) ? $fee_schedule : $global_fc_id;

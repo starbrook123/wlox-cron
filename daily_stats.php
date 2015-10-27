@@ -1,7 +1,6 @@
 #!/usr/bin/php
 <?php
 echo "Beginning Daily Stats Processing...".PHP_EOL;
-
 include 'common.php';
 
 /* should run at the very start of every day */

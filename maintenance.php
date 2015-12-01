@@ -74,6 +74,15 @@ $result = db_query($sql);
 $sql = "DELETE FROM sessions WHERE session_time < ('".date('Y-m-d H:i:s')."' - INTERVAL 15 MINUTE) ";
 db_query($sql);
 
+// delete old chats
+$sql = 'SELECT COUNT(id) AS total FROM chat';
+$result = db_query_array($sql);
+if ($result && $result[0]['total'] > 0) {
+	$c = $result[0]['total'] - 30;
+	if ($c > 0)
+		db_query('DELETE FROM chat ORDER BY id ASC LIMIT '.$c);
+}
+
 // delete ip access log
 $timeframe = (!empty($CFG->cloudflare_blacklist_timeframe)) ? $CFG->cloudflare_blacklist_timeframe : 15;
 $sql = "DELETE FROM ip_access_log WHERE `timestamp` < ('".date('Y-m-d H:i:s')."' - INTERVAL $timeframe MINUTE) ";

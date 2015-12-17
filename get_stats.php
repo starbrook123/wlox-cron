@@ -1,34 +1,36 @@
 #!/usr/bin/php
 <?php
-echo "Beginning Get Status processing...".PHP_EOL;
+echo "Beginning Get Global Market Stats processing...".PHP_EOL;
 
 include 'common.php';
 
+$wallets = Wallets::get();
+if (!$wallets)
+	exit;
 
-// GET BITCOIN GLOBAL STATS
-$data = file_get_contents('http://blockchain.info/charts/total-bitcoins?format=csv');
-$data1 = explode("\n",$data);
-$c = count($data1) - 1;
-$data2 = explode(',',$data1[$c]);
-$total_btc = $data2[1];
+if (!array_key_exists('BTC',$wallets)) {
+	echo 'Error: Must have BTC data series to execute this function.'.PHP_EOL;
+	exit;
+}
 
-$data = file_get_contents('http://blockchain.info/charts/market-cap?format=csv');
-$data1 = explode("\n",$data);
-$c = count($data1) - 1;
-$data2 = explode(',',$data1[$c]);
-$market_cap = $data2[1];
+$main = Currencies::getMain();
+$btc_data = array();
+$btc_wallet = $wallets['BTC'];
+unset($wallets['BTC']);
+array_unshift($wallets,$btc_wallet);
 
-$data = file_get_contents('http://blockchain.info/charts/trade-volume?format=csv');
-$data1 = explode("\n",$data);
-$c = count($data1) - 1;
-$data2 = explode(',',$data1[$c]);
-$trade_volume = $data2[1];
-db_update('current_stats',1,array('trade_volume'=>$data2[1],'total_btc'=>$total_btc,'market_cap'=>$market_cap));
+// GET CRYPTO GLOBAL STATS
+foreach ($wallets as $wallet) {
+	$data1 = file_get_contents('http://coinmarketcap-nexuist.rhcloud.com/api/'.strtolower($CFG->currencies[$wallet['c_currency']]['currency']));
+	$data = json_decode($data1,true);
+	
+	db_update('current_stats',1,array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'total_btc'=>($data['supply']['usd']/$CFG->currencies[$wallet['c_currency']]['usd_ask']),'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
+}
 
-// GET EXCHANGE RATES
+// GET FIAT EXCHANGE RATES
 if ($CFG->currencies) {
 	foreach ($CFG->currencies as $currency) {
-		if ($currency['currency'] == 'BTC' || $currency == 'USD')
+		if ($currency['is_crypto'] == 'Y' || $currency == 'USD')
 			continue;
 		
 		$currencies[] = $currency['currency'].'USD';
@@ -69,7 +71,6 @@ if ($CFG->currencies) {
 		$result = db_query($sql);
 	}
 }
-
 db_update('status',1,array('cron_get_stats'=>date('Y-m-d H:i:s')));
 echo 'done'.PHP_EOL;
 

@@ -58,10 +58,10 @@ class BitcoinAddresses{
 		return $new_id;
 	}
 	
-	public static function getAddress($address) {
+	public static function getAddress($address,$c_currency=false) {
 		global $CFG;
 		
-		$sql = "SELECT bitcoin_addresses.id, bitcoin_addresses.site_user,bitcoin_addresses.date,bitcoin_addresses.system_address, bitcoin_addresses.hot_wallet, site_users.trusted, site_users.first_name, site_users.last_name, site_users.notify_deposit_btc FROM bitcoin_addresses LEFT JOIN site_users ON (site_users.id = bitcoin_addresses.site_user) WHERE bitcoin_addresses.address = '$address' LIMIT 0,1";
+		$sql = "SELECT bitcoin_addresses.id, bitcoin_addresses.site_user,bitcoin_addresses.date,bitcoin_addresses.system_address, bitcoin_addresses.hot_wallet, site_users.trusted, site_users.first_name, site_users.last_name, site_users.notify_deposit_btc FROM bitcoin_addresses LEFT JOIN site_users ON (site_users.id = bitcoin_addresses.site_user) WHERE ".($c_currency ? 'bitcoin_addresses.c_currency = '.$c_currency.' AND ' : '')." bitcoin_addresses.address = '$address' LIMIT 0,1";
 		$result = db_query_array($sql);
 		return $result[0];
 	}

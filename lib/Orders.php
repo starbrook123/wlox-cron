@@ -508,7 +508,7 @@ class Orders {
 		return false;
 	}
 	
-	public static function executeOrder($buy,$price,$amount,$currency1,$fee,$market_price,$edit_id=0,$this_user_id=0,$external_transaction=false,$stop_price=false,$use_maker_fee=false,$verbose=false) {
+	public static function executeOrder($buy,$price,$amount,$currency1,$c_currency1,$fee,$market_price,$edit_id=0,$this_user_id=0,$external_transaction=false,$stop_price=false,$use_maker_fee=false,$verbose=false) {
 		global $CFG;
 		
 		if (!$CFG->session_active)

@@ -1,43 +1,46 @@
 #!/usr/bin/php
 <?php
-echo "Beginning Daily Stats Processing...".PHP_EOL;
 include 'common.php';
+echo date('Y-m-d H:i:s').' Beginning Daily Report processing...'.PHP_EOL;
 
 /* should run at the very start of every day */
+
+$main = Currencies::getMain();
+$cryptos = Currencies::getCryptos();
 
 // compile historical data
 $sql = "INSERT INTO historical_data (`date`,usd) (SELECT '".(date('Y-m-d',strtotime('-1 day')))."',(transactions.btc_price * currencies.usd_ask) AS btc_price FROM transactions LEFT JOIN currencies ON (transactions.currency = currencies.id) WHERE transactions.date <= (CURDATE()) ORDER BY transactions.date DESC LIMIT 0,1) ";
 $result = db_query($sql);
 
 // get total of each currency
-$sql = 'SELECT COUNT(DISTINCT site_users.id) AS total_users, SUM(IF(site_users_balances.currency = '.$CFG->btc_currency_id.',site_users_balances.balance,0)) AS btc, SUM(IF(site_users_balances.currency != '.$CFG->btc_currency_id.',site_users_balances.balance * currencies.usd_ask,0)) AS usd FROM site_users LEFT JOIN site_users_balances ON (site_users.id = site_users_balances.site_user) LEFT JOIN currencies ON (currencies.id = site_users_balances.currency)';
+$sql = 'SELECT COUNT(DISTINCT site_users.id) AS total_users, SUM(IF(site_users_balances.currency IN ('.implode(',',$cryptos).'),site_users_balances.balance * currencies.usd_ask,0)) AS btc, SUM(IF(site_users_balances.currency NOT IN ('.implode(',',$cryptos).'),site_users_balances.balance * currencies.usd_ask,0)) AS usd FROM site_users LEFT JOIN site_users_balances ON (site_users.id = site_users_balances.site_user) LEFT JOIN currencies ON (currencies.id = site_users_balances.currency)';
 $result = db_query_array($sql);
 if ($result) {
 	$total_users = $result[0]['total_users'];
-	$total_btc = $result[0]['btc'];
-	$total_usd = $result[0]['usd'];
+	$total_btc = round($result[0]['btc'] / $CFG->currencies[$main['crypto']]['usd_ask'],2,PHP_ROUND_HALF_UP);
+	$total_usd = round($result[0]['usd'] / $CFG->currencies[$main['fiat']]['usd_ask'],2,PHP_ROUND_HALF_UP);
 	$btc_per_user = $total_btc / $total_users;
 	$usd_per_user = $total_usd / $total_users;
 }
 
 // get open orders BTC
-$sql = 'SELECT SUM(btc) AS btc FROM orders';
+$sql = 'SELECT SUM(orders.btc * currencies.usd_ask) AS btc FROM orders LEFT JOIN currencies ON (orders.c_currency = currencies.id)';
 $result = db_query_array($sql);
-$open_orders_btc = $result[0]['btc'];
+$open_orders_btc = round($result[0]['btc'] / $CFG->currencies[$main['crypto']]['usd_ask'],2,PHP_ROUND_HALF_UP);
 
 // get total transactions for the day
-$sql = 'SELECT SUM(transactions.btc) AS total_btc, AVG(transactions.btc) AS avg_btc, SUM((transactions.fee + transactions.fee1)  * transactions.btc_price * currencies.usd_ask) AS total_fees FROM transactions LEFT JOIN currencies ON (transactions.currency = currencies.id) WHERE DATE(transactions.date) = (CURDATE() - INTERVAL 1 DAY)';
+$sql = 'SELECT SUM(transactions.btc * c_currencies.usd_ask) AS total_btc, AVG(transactions.btc * c_currencies.usd_ask) AS avg_btc, SUM((transactions.fee + transactions.fee1)  * transactions.btc_price * currencies.usd_ask) AS total_fees FROM transactions LEFT JOIN currencies ON (transactions.currency = currencies.id) LEFT JOIN currencies c_currencies ON (orders.c_currency = c_currencies.id) WHERE DATE(transactions.date) = (CURDATE() - INTERVAL 1 DAY)';
 $result = db_query_array($sql);
-$transactions_btc = $result[0]['total_btc'];
-$avg_transaction = $result[0]['avg_btc'];
+$transactions_btc = round($result[0]['total_btc'] / $CFG->currencies[$main['crypto']]['usd_ask'],2,PHP_ROUND_HALF_UP);
+$avg_transaction = round($result[0]['avg_btc'] / $CFG->currencies[$main['crypto']]['usd_ask'],2,PHP_ROUND_HALF_UP);
 $trans_per_user = $transactions_btc / $total_users;
-$total_fees = $result[0]['total_fees'];
+$total_fees = round($result[0]['total_fees'] / $CFG->currencies[$main['fiat']]['usd_ask'],2,PHP_ROUND_HALF_UP);
 $fees_per_user = $total_fees / $total_users;
 
-// get fees incurred from the Bitcoin network for internal movements
-$sql = 'SELECT SUM(fees.fee*currencies.usd_ask) AS fees_incurred FROM fees LEFT JOIN currencies ON (currencies.id = 28) WHERE DATE(fees.date) = (CURDATE() - INTERVAL 1 DAY)';
+// get fees incurred from crypto networks for internal movements
+$sql = 'SELECT SUM(fees.fee*currencies.usd_ask) AS fees_incurred FROM fees LEFT JOIN currencies ON (currencies.id = fees.c_currency) WHERE DATE(fees.date) = (CURDATE() - INTERVAL 1 DAY)';
 $result = db_query_array($sql);
-$gross_profit = $total_fees - $result[0]['fees_incurred'];
+$gross_profit = $total_fees - round($result[0]['fees_incurred'] / $CFG->currencies[$main['fiat']]['usd_ask'],2,PHP_ROUND_HALF_UP);
 
 db_insert('daily_reports',array('date'=>date('Y-m-d',strtotime('-1 day')),'total_btc'=>$total_btc,'total_fiat_usd'=>$total_usd,'btc_per_user'=>$btc_per_user,'usd_per_user'=>$usd_per_user,'open_orders_btc'=>$open_orders_btc,'transactions_btc'=>$transactions_btc,'avg_transaction_size_btc'=>$avg_transaction,'transaction_volume_per_user'=>$trans_per_user,'total_fees_btc'=>$total_fees,'fees_per_user_btc'=>$fees_per_user,'gross_profit_btc'=>$gross_profit));
 

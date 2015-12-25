@@ -2,7 +2,7 @@
 class BitcoinAddresses{
 	static $bitcoin;
 	
-	public static function get($count=false,$page=false,$per_page=false,$user=false,$unassigned=false,$system=false) {
+	public static function get($count=false,$c_currency=false,$page=false,$per_page=false,$user=false,$unassigned=false,$system=false) {
 		global $CFG;
 		
 		$page = ($page > 0) ? $page - 1 : 0;
@@ -24,6 +24,9 @@ class BitcoinAddresses{
 			$sql .= " AND system_address = 'Y' ";
 		else
 			$sql .= " AND system_address != 'Y' ";
+		
+		if ($c_currency)
+			$sql .= ' AND c_currency = '.$c_currency.' ';
 		
 		if ($per_page > 0 && !$count)
 			$sql .= " ORDER BY bitcoin_addresses.date DESC LIMIT $r1,$per_page ";
@@ -64,17 +67,6 @@ class BitcoinAddresses{
 		$sql = "SELECT bitcoin_addresses.id, bitcoin_addresses.site_user,bitcoin_addresses.date,bitcoin_addresses.system_address, bitcoin_addresses.hot_wallet, site_users.trusted, site_users.first_name, site_users.last_name, site_users.notify_deposit_btc FROM bitcoin_addresses LEFT JOIN site_users ON (site_users.id = bitcoin_addresses.site_user) WHERE ".($c_currency ? 'bitcoin_addresses.c_currency = '.$c_currency.' AND ' : '')." bitcoin_addresses.address = '$address' LIMIT 0,1";
 		$result = db_query_array($sql);
 		return $result[0];
-	}
-	
-	public static function getBalance() {
-		global $CFG;
-		
-		if (!$CFG->session_active)
-			return false;
-		
-		$sql = "SELECT SUM(balance) AS balance FROM bitcoin_addresses WHERE confirmed = 'Y' ";
-		$result = db_query_array($sql);
-		return $result[0]['balance'];
 	}
 	
 	public static function getBitcoindBalance() {

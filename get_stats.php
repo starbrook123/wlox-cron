@@ -4,28 +4,26 @@ echo "Beginning Get Global Market Stats processing...".PHP_EOL;
 
 include 'common.php';
 
+$main = Currencies::getMain();
 $wallets = Wallets::get();
 if (!$wallets)
 	exit;
 
-if (!array_key_exists('BTC',$wallets)) {
-	echo 'Error: Must have BTC data series to execute this function.'.PHP_EOL;
-	exit;
-}
-
-$main = Currencies::getMain();
-$btc_data = array();
-$btc_wallet = $wallets['BTC'];
-unset($wallets['BTC']);
-array_unshift($wallets,$btc_wallet);
-
 // GET CRYPTO GLOBAL STATS
 foreach ($wallets as $wallet) {
-	$data1 = file_get_contents('http://coinmarketcap-nexuist.rhcloud.com/api/'.strtolower($CFG->currencies[$wallet['c_currency']]['currency']));
+	$ch = curl_init();
+	curl_setopt($ch,CURLOPT_URL,'http://coinmarketcap-nexuist.rhcloud.com/api/'.strtolower($CFG->currencies[$wallet['c_currency']]['currency']));
+	curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+	curl_setopt($ch,CURLOPT_TIMEOUT,10);
+	curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false);
+	$data1 = curl_exec($ch);
+	curl_close($ch);
 	$data = json_decode($data1,true);
 	
-	db_update('current_stats',1,array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'total_btc'=>($data['supply']['usd']/$CFG->currencies[$wallet['c_currency']]['usd_ask']),'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
+	db_update('wallets',$wallet['id'],array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'total_btc'=>($data['supply']['usd']/$CFG->currencies[$wallet['c_currency']]['usd_ask']),'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
 }
+exit;
 
 // GET FIAT EXCHANGE RATES
 if ($CFG->currencies) {
@@ -35,8 +33,18 @@ if ($CFG->currencies) {
 		
 		$currencies[] = $currency['currency'].'USD';
 	}
+	
 	$currency_string = urlencode(implode(',',$currencies));
-	$data = json_decode(file_get_contents('http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%3D%22'.$currency_string.'%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys'),TRUE);
+	$ch = curl_init();
+	curl_setopt($ch,CURLOPT_URL,'http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20yahoo.finance.xchange%20where%20pair%3D%22'.$currency_string.'%22&format=json&diagnostics=true&env=store%3A%2F%2Fdatatables.org%2Falltableswithkeys');
+	curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+	curl_setopt($ch,CURLOPT_TIMEOUT,10);
+	curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false);
+	$data1 = curl_exec($ch);
+	curl_close($ch);
+	
+	$data = json_decode($data1,true);
 	
 	if ($data['query']['results']['rate']) {
 		$bid_str = '(CASE currency ';

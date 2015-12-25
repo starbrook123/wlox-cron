@@ -3,29 +3,22 @@ class Wallets {
 	public static function get() {
 		global $CFG;
 	
-		if (!($user_id > 0))
-			return false;
-	
 		$sql = 'SELECT wallets.* FROM wallets ';
 		$result = db_query_array($sql);
 		if (!$result)
 			return false;
 	
-		if (!empty($currencies)) {
-			$sorted = array();
-			foreach ($result as $row) {
-				$sorted[$CFG->currencies[$row['c_currency']]['currency']] = $row;
-			}
-			return $sorted;
+		$sorted = array();
+		foreach ($result as $row) {
+			$sorted[$CFG->currencies[$row['c_currency']]['currency']] = $row;
 		}
-		else
-			return $result;
+		return $sorted;
 	}
 	
 	public static function sumFields($wallet_id,$fields) {
 		global $CFG;
 	
-		if (!is_array($fields) || empty($fields || !$wallet_id))
+		if (!is_array($fields) || empty($fields) || !$wallet_id)
 			return false;
 	
 		$set = array();

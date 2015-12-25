@@ -22,27 +22,36 @@ if (!array_key_exists('BTC',$wallets)) {
 $btc_data = array();
 $btc_wallet = $wallets['BTC'];
 unset($wallets['BTC']);
-array_unshift($wallets,$btc_wallet);
+$wallets = array('BTC'=>$btc_wallet) + $wallets;
 
 // QUANDL HISTORICAL DATA
-foreach ($wallets as $wallets) {
+foreach ($wallets as $wallet) {
 	if ($CFG->currencies[$wallet['c_currency']]['currency'] == 'BTC')
 		$url = 'https://www.quandl.com/api/v3/datasets/BAVERAGE/USD.csv';
 	else
 		$url = 'https://www.quandl.com/api/v3/datasets/CRYPTOCHART/'.$CFG->currencies[$wallet['c_currency']]['currency'].'.csv';
 	
-	$data = file_get_contents($url);
+	$ch = curl_init();
+	curl_setopt($ch,CURLOPT_URL,$url);
+	curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+	curl_setopt($ch,CURLOPT_TIMEOUT,10);
+	curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false);
+	$data = curl_exec($ch);
+	curl_close($ch);
 	$data1 = explode("\n",$data);
+	
 	if ($data1) {
 		$i = 1;
 		$c = count($data1);
+		$rows = array();
+		
 		foreach ($data1 as $row) {
-			if ($i == 1) {
+			$row1 = explode(',',$row);
+			if ($i == 1 || ($i > 2 && (empty($row1[0]) || empty($row1[1])))) {
 				$i++;
 				continue;
 			}
-			
-			$row1 = explode(',',$row);
 			
 			if ($CFG->currencies[$wallet['c_currency']]['currency'] == 'BTC') {
 				$btc_data[$row1[0]] = $row1[1];
@@ -54,21 +63,19 @@ foreach ($wallets as $wallets) {
 				continue;
 			
 			if ($i == 2) {
-				db_update('currencies',$CFG->btc_currency_id,array('usd_ask'=>$exchange_rate,'usd_bid'=>$exchange_rate));
+				db_update('currencies',$wallet['c_currency'],array('usd_ask'=>$exchange_rate,'usd_bid'=>$exchange_rate));
 			}
 			
-			$sql = "SELECT * FROM historical_data WHERE `date` = '{$row1[0]}'";
-			$result = db_query_array($sql);
-			
-			if (!$result) {
-				db_insert('historical_data',array('date'=>$row1[0],'usd'=>$exchange_rate));
-			}
-			else {
-				db_update('historical_data',$result[0]['id'],array('usd'=>$exchange_rate));
-			}
-			
+			$rows[] = array('c_currency'=>$wallet['c_currency'],'date'=>'"'.$row1[0].'"','usd'=>$exchange_rate);
 			$i++;
 		}
+		
+		foreach ($rows as $row) {
+			$rows1[] = '('.implode(',',$row).')';
+		}
+		
+		$sql = 'INSERT INTO historical_data ('.implode(',',array_keys($rows[0])).') VALUES '.implode(',',$rows1).' ON DUPLICATE KEY UPDATE c_currency = VALUES(c_currency), date = VALUES(date), usd = VALUES(usd)';
+		db_query($sql);
 	}
 }
 

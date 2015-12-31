@@ -17,6 +17,7 @@ $sql = "SELECT transactions.c_currency, IFNULL(SUM(btc),0) AS btc_24h, IFNULL(SU
 $result = db_query_array($sql);
 $processed = array();
 if ($result) {
+	$wallets = Wallets::get();
 	foreach ($result as $currency) {
 		$processed[] = $currency['c_currency'];
 		
@@ -26,9 +27,9 @@ if ($result) {
 		$btc_1h[$currency['c_currency']] = $currency['btc_1h'];
 		$btc_1h_s[$currency['c_currency']] = $currency['btc_1h_s'];
 		$btc_1h_b[$currency['c_currency']] = $currency['btc_1h_b'];
-		$btc_24h_main += ($currency['c_currency'] != $main['crypto']) ? round(($CFG->currencies[$currency['c_currency']]['usd'] / $CFG->currencies[$main['crypto']]['usd_ask']) * $currency['btc_24h'],8,PHP_ROUND_HALF_UP) : $currency['btc_24h'];
+		$btc_24h_main += ($currency['c_currency'] != $main['crypto']) ? round(($CFG->currencies[$currency['c_currency']]['usd_ask'] / $CFG->currencies[$main['crypto']]['usd_ask']) * $currency['btc_24h'],8,PHP_ROUND_HALF_UP) : $currency['btc_24h'];
 		
-		db_update('wallets',1,array('btc_24h'=>$currency['btc_24h'],'btc_24h_s'=>$currency['btc_24h_s'],'btc_24h_b'=>$currency['btc_24h_b'],'btc_1h'=>$currency['btc_1h'],'btc_1h_s'=>$currency['btc_1h_s'],'btc_1h_b'=>$currency['btc_1h_b']));
+		db_update('wallets',$wallets[$CFG->currencies[$currency['c_currency']]['currency']]['id'],array('btc_24h'=>$currency['btc_24h'],'btc_24h_s'=>$currency['btc_24h_s'],'btc_24h_b'=>$currency['btc_24h_b'],'btc_1h'=>$currency['btc_1h'],'btc_1h_s'=>$currency['btc_1h_s'],'btc_1h_b'=>$currency['btc_1h_b']));
 	}
 }
 
@@ -66,9 +67,10 @@ if ($result && count($result) > 1) {
 	if ($volumes) {
 		foreach ($volumes as $volume) {
 			foreach ($result as $row) {
-				$global_fc_id = ($row['global_btc'] <= $btc_24h_main) ? $row['id'] : $global_fc_id;
+				$global_fc_id = ($row['global_btc'] <= $btc_24h_main && $row['global_btc'] > 0) ? $row['id'] : $global_fc_id;
 				$fee_schedule = ($row['from_usd'] <= ($volume['volume'] / $CFG->currencies[$main['fiat']]['usd_ask'])) ? $row['id'] : $fee_schedule;
 			}
+			
 			$fee_schedule = ($fee_schedule >= $global_fc_id) ? $fee_schedule : $global_fc_id;
 			$sql = 'UPDATE site_users SET site_users.fee_schedule = '.$fee_schedule.' WHERE site_users.id = '.$volume['user_id'];
 			db_query($sql);
@@ -112,7 +114,7 @@ $result = db_query_array($sql);
 if ($result) {
 	foreach ($result as $row) {
 		$buy = ($row['order_type'] == $CFG->order_type_bid);
-		$operations = Orders::executeOrder($buy,false,$row['btc'],$CFG->currencies[$row['currency']]['currency'],$CFG->currencies[$row['currency']]['c_currency'],false,1,$row['id'],$row['site_user'],true);
+		$operations = Orders::executeOrder($buy,false,$row['btc'],$row['c_currency'],$row['currency'],false,1,$row['id'],$row['site_user'],true);
 	}
 }
 
@@ -121,7 +123,7 @@ if ($CFG->email_notify_fiat_withdrawals == 'Y') {
 	$sql = 'SELECT 1 FROM requests WHERE notified = 0 AND request_type = '.$CFG->request_widthdrawal_id.' AND request_status = '.$CFG->request_pending_id.' AND `date` < DATE_SUB(DATE_ADD(NOW(), INTERVAL '.((($CFG->timezone_offset)/60)/60).' HOUR), INTERVAL 5 MINUTE) AND done != \'Y\' LIMIT 0,1';
 	$result = db_query_array($sql);
 	
-	$sql = 'SELECT c_currency, (hot_wallet_btc - ((total_btc * '.$reserve_ratio.') + pending_withdrawals) - bitcoin_sending_fee) AS deficit FROM wallets WHERE hot_wallet_notified == "N" AND (hot_wallet_btc - ((total_btc * '.$reserve_ratio.') + pending_withdrawals) - bitcoin_sending_fee) LIMIT 0,1';
+	$sql = 'SELECT c_currency, (hot_wallet_btc - ((total_btc * '.$reserve_ratio.') + pending_withdrawals) - bitcoin_sending_fee) AS deficit FROM wallets WHERE hot_wallet_notified = "N" AND (hot_wallet_btc - ((total_btc * '.$reserve_ratio.') + pending_withdrawals) - bitcoin_sending_fee) LIMIT 0,1';
 	$result1 = db_query_array($sql);
 	
 	if ($result || $result1) {

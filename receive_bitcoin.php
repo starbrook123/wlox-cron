@@ -101,7 +101,7 @@ foreach ($wallets as $wallet) {
 						db_insert('history',array('date'=>date('Y-m-d H:i:s'),'history_action'=>$CFG->history_deposit_id,'site_user'=>$user_id,'request_id'=>$rid,'balance_before'=>$user_balances[$user_id],'balance_after'=>($user_balances[$user_id] + $detail['amount']),'bitcoin_address'=>$detail['address']));
 					}
 					
-					echo 'Transaction pending.'.PHP_EOL;
+					echo $CFG->currencies[$wallet['c_currency']]['currency'].' transaction pending.'.PHP_EOL;
 					$pending = true;
 				}
 				else {
@@ -137,7 +137,7 @@ foreach ($wallets as $wallet) {
 						if (!$unlink)
 							echo 'Error: Could not delete transaction file.'.PHP_EOL;
 						else
-							echo 'Transaction credited successfully.'.PHP_EOL;
+							echo $CFG->currencies[$wallet['c_currency']]['currency'].' transaction credited successfully.'.PHP_EOL;
 					}
 				}
 			}
@@ -156,7 +156,7 @@ foreach ($wallets as $wallet) {
 			unlink($transactions_dir.$t_id);
 		elseif (!$send && ($hot_wallet_in > 0)) {
 			$updated = Wallets::sumFields($wallet['id'],array('hot_wallet_btc'=>$hot_wallet_in,'warm_wallet_btc'=>(-1 * ($hot_wallet_in + $wallet['bitcoin_sending_fee'])),'total_btc'=>(-1 * $wallet['bitcoin_sending_fee'])));
-			echo 'Hot wallet received '.$hot_wallet_in.PHP_EOL;
+			echo 'Hot wallet received '.$hot_wallet_in.' '.$CFG->currencies[$wallet['c_currency']]['currency'].PHP_EOL;
 			if ($updated) {
 				$unlink = unlink($transactions_dir.$t_id);
 				if (!$unlink && file_exists($unlink)) {
@@ -172,7 +172,7 @@ foreach ($wallets as $wallet) {
 	$warm_wallet = $wallet['bitcoin_warm_wallet_address'];
 	$reserve = Wallets::getReserveSurplus($wallet['id']);
 	$reserve_surplus = $reserve['surplus'] + $total_received;
-	echo 'Reserve surplus: '.sprintf("%.8f", $reserve_surplus).PHP_EOL;
+	echo 'Reserve surplus: '.sprintf("%.8f", $reserve_surplus).' '.$CFG->currencies[$wallet['c_currency']]['currency'].PHP_EOL;
 	
 	/*
 	if ($total_received > 0 || $reserve_surplus > $CFG->bitcoin_reserve_min) {
@@ -188,10 +188,10 @@ foreach ($wallets as $wallet) {
 	*/
 	
 	if ($total_received > 0) {
-		echo 'Total received: '.$total_received.PHP_EOL;
+		echo 'Total '.$CFG->currencies[$wallet['c_currency']]['currency'].' received: '.$total_received.PHP_EOL;
 		$update = Wallets::sumFields($wallet['id'],array('hot_wallet_btc'=>$total_received,'total_btc'=>$total_received));
 		
-		if (($reserve['hot_wallet_btc'] + $total_received) > $wallet['bitcoin_reserve_min'] && $warm_wallet && $reserve_surplus > 0) {
+		if (($reserve['hot_wallet_btc'] + $total_received) > $CFG->bitcoin_reserve_min && $warm_wallet && $reserve_surplus > 0) {
 			$bitcoin->walletpassphrase($wallet['bitcoin_passphrase'],3);
 			$response = $bitcoin->sendfrom($wallet['bitcoin_accountname'],$warm_wallet,floatval($reserve_surplus));
 			$transferred = 0;
@@ -216,7 +216,7 @@ foreach ($wallets as $wallet) {
 			}
 		}
 	}
-	elseif ($reserve['hot_wallet_btc'] > $wallet['bitcoin_reserve_min'] && $warm_wallet && $reserve_surplus > 0) {
+	elseif ($reserve['hot_wallet_btc'] > $CFG->bitcoin_reserve_min && $warm_wallet && $reserve_surplus > 0) {
 		$bitcoin->walletpassphrase($wallet['bitcoin_passphrase'],3);
 		$response = $bitcoin->sendfrom($wallet['bitcoin_accountname'],$warm_wallet,floatval($reserve_surplus));
 		$transferred = 0;
@@ -243,6 +243,6 @@ foreach ($wallets as $wallet) {
 	}
 }
 
-db_update('status',1,array('cron_receive_bitcoin'=>date('Y-m-d H:i:s'),'last_sweep'=>date('Y-m-d H:i:s')));
+db_update('status',1,array('cron_receive_bitcoin'=>date('Y-m-d H:i:s')));
 
 echo 'done'.PHP_EOL;

@@ -20,10 +20,9 @@ foreach ($wallets as $wallet) {
 	$data1 = curl_exec($ch);
 	curl_close($ch);
 	$data = json_decode($data1,true);
-	
-	db_update('wallets',$wallet['id'],array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'total_btc'=>($data['supply']['usd']/$CFG->currencies[$wallet['c_currency']]['usd_ask']),'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
+
+	db_update('wallets',$wallet['id'],array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'total_btc'=>$data['supply'],'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
 }
-exit;
 
 // GET FIAT EXCHANGE RATES
 if ($CFG->currencies) {

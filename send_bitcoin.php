@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 include 'common.php';
-echo date('Y-m-d H:i:s').'Beginning Crypto Withdrawals processing...'.PHP_EOL;
+echo date('Y-m-d H:i:s').' Beginning Crypto Withdrawals processing...'.PHP_EOL;
 
 $cryptos = Currencies::getCryptos();
 $sql = "SELECT requests.currency, requests.site_user, requests.amount, requests.send_address, requests.id, site_users_balances.balance, site_users_balances.id AS balance_id FROM requests LEFT JOIN site_users ON (requests.site_user = site_users.id) LEFT JOIN site_users_balances ON (site_users_balances.site_user = requests.site_user AND site_users_balances.currency = requests.currency) WHERE requests.request_status = {$CFG->request_pending_id} AND requests.currency IN (".implode(',',$cryptos).") AND requests.request_type = {$CFG->request_withdrawal_id}".(($CFG->withdrawals_btc_manual_approval == 'Y') ? " AND (requests.approved = 'Y' OR site_users.trusted = 'Y')" : '');
@@ -76,7 +76,7 @@ foreach ($wallets as $wallet) {
 	
 		if ($pending > $available) {
 			db_update('wallets',$wallet['id'],array('deficit_btc'=>($pending - $available),'pending_withdrawals'=>$pending));
-			echo 'Deficit: '.($pending - $available).PHP_EOL;
+			echo $CFG->currencies[$wallet['c_currency']]['currency'].' Deficit: '.($pending - $available).PHP_EOL;
 		}
 	}
 	
@@ -108,7 +108,7 @@ foreach ($wallets as $wallet) {
 	}
 	
 	if (!empty($response) && $users && !$bitcoin->error) {
-		echo 'Transactions sent: '.$response.PHP_EOL;
+		echo $CFG->currencies[$wallet['c_currency']]['currency'].' Transactions sent: '.$response.PHP_EOL;
 		
 		$total = 0;
 		$transaction = $bitcoin->gettransaction($response);
@@ -126,11 +126,11 @@ foreach ($wallets as $wallet) {
 		if ($total > 0) {
 			Wallets::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $total + $actual_fee_difference),'total_btc'=>(0 - $total + $actual_fee_difference)));
 			Status::updateEscrows(array($wallet['c_currency']=>$actual_fee_difference));
-			db_update('status',1,array('pending_withdrawals'=>($pending - $total)));
+			db_update('wallets',$wallet['id'],array('pending_withdrawals'=>($pending - $total)));
 		}
 	}
 	
-	if (empty($pending)) db_update('status',1,array('deficit_btc'=>'0'));
+	if (empty($pending)) db_update('wallets',$wallet['id'],array('deficit_btc'=>'0'));
 }
 
 db_update('status',1,array('cron_send_bitcoin'=>date('Y-m-d H:i:s')));

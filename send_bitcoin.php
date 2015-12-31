@@ -116,11 +116,11 @@ foreach ($wallets as $wallet) {
 	
 		foreach ($users as $site_user => $amount) {
 			$total += $amount;
-			User::updateBalances($site_user,array($wallet['currency']=>(-1 * $amount)),true);
+			User::updateBalances($site_user,array($wallet['c_currency']=>(-1 * $amount)),true);
 		}
 		
 		foreach ($requests as $request_id) {
-			db_update('requests',$request_id,array('request_status'=>$wallet['request_completed_id']));
+			db_update('requests',$request_id,array('request_status'=>$CFG->request_completed_id));
 		}
 		
 		if ($total > 0) {

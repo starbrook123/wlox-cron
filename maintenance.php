@@ -134,12 +134,18 @@ if ($CFG->email_notify_fiat_withdrawals == 'Y') {
 		
 		if ($result) {
 			foreach ($result as $row) {
+				if (empty($info['pending_withdrawals']))
+					$info['pending_withdrawals'] = '';
+				
 				$info['pending_withdrawals'] .= strtoupper($row['currency']).': '.$row['amount'].'<br/>';
 			}
 		}
 		
 		if ($result1) {
 			foreach ($result1 as $row) {
+				if (empty($info['pending_withdrawals']))
+					$info['pending_withdrawals'] = '';
+				
 				$info['pending_withdrawals'] .= 'Hot Wallet Deficit ('.$CFG->currencies[$row['c_currency']]['currency'].'): '.abs($row['deficit']).'<br/>';
 			}
 		}

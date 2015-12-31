@@ -34,7 +34,7 @@ if ($result) {
 // get total currency conversion profit in main fiat
 $sql = 'SELECT SUM(conversions.profit_to_factor * currencies.usd_ask) AS conversion_fees FROM conversions LEFT JOIN currencies ON (currencies.id = conversions.currency) WHERE conversions.is_active = "Y" AND factored != "Y"';
 $result = db_query_array($sql);
-$conversion_fees = round($result[0]['conversion_fees'] / $CFG->currencies[$main['fiat']]['usd_ask'],2,PHP_ROUND_HALF_UP);
+$conversion_fees = round($result[0]['conversion_fees'] / $CFG->currencies[$main['fiat']]['usd_ask'],8,PHP_ROUND_HALF_UP);
 
 // close this month's currency ledger
 $sql = 'UPDATE conversions SET factored = "Y" WHERE conversions.is_active = "Y" AND factored != "Y"';
@@ -52,7 +52,7 @@ if (!empty($ledger)) {
 }
 
 // get fees incurred from the Bitcoin network for internal movements
-$sql = 'SELECT SUM(fees.fee * currencies.usd_ask) AS fees_incurred FROM fees LEFT JOIN currencies ON (currencies.id = 28) WHERE MONTH(fees.date) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(fees.date) = YEAR(CURDATE() - INTERVAL 1 MONTH)';
+$sql = 'SELECT SUM(fees.fee * currencies.usd_ask) AS fees_incurred FROM fees LEFT JOIN currencies ON (currencies.id = fees.c_currency) WHERE MONTH(fees.date) = MONTH(CURDATE() - INTERVAL 1 MONTH) AND YEAR(fees.date) = YEAR(CURDATE() - INTERVAL 1 MONTH)';
 $result = db_query_array($sql);
 $gross_profit = $total_fees - round($result[0]['fees_incurred'] / $CFG->currencies[$main['fiat']]['usd_ask'],2,PHP_ROUND_HALF_UP);
 

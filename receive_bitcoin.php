@@ -114,7 +114,7 @@ foreach ($wallets as $wallet) {
 						$updated = db_update('requests',$request_id,array('request_status'=>$CFG->request_completed_id));
 					
 					if ($updated > 0) {
-						User::updateBalances($user_id,array('btc'=>($detail['amount'])),true);
+						User::updateBalances($user_id,array($wallet['c_currency']=>($detail['amount'])),true);
 						db_insert('bitcoind_log',array('transaction_id'=>$transaction['txid'],'amount'=>$detail['amount'],'date'=>date('Y-m-d H:i:s')));
 						
 						$unlink = unlink($transactions_dir.$t_id);
@@ -171,7 +171,7 @@ foreach ($wallets as $wallet) {
 	
 	$warm_wallet = $wallet['bitcoin_warm_wallet_address'];
 	$reserve = Wallets::getReserveSurplus($wallet['id']);
-	$reserve_surplus = $reserve['surplus'] + $total_received;
+	$reserve_surplus = round($reserve['surplus'],8,PHP_ROUND_HALF_UP) + $total_received;
 	echo 'Reserve surplus: '.sprintf("%.8f", $reserve_surplus).' '.$CFG->currencies[$wallet['c_currency']]['currency'].PHP_EOL;
 	
 	/*
@@ -203,7 +203,7 @@ foreach ($wallets as $wallet) {
 				$transaction = $bitcoin->gettransaction($response);
 				foreach ($transaction['details'] as $detail) {
 					if ($detail['category'] == 'send') {
-						$detail['fee'] = abs($detail['fee']);
+						$detail['fee'] = round(abs($detail['fee']),8,PHP_ROUND_HALF_UP);
 						if ($detail['fee'] > 0) {
 							$transfer_fees += $detail['fee'];
 							db_insert('fees',array('fee'=>$detail['fee'],'date'=>date('Y-m-d H:i:s')));
@@ -211,7 +211,7 @@ foreach ($wallets as $wallet) {
 					}
 				}
 				
-				Wallet::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred,'total_btc'=>(0 - $transfer_fees)));
+				Wallet::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred - $transfer_fees,'total_btc'=>(0 - $transfer_fees)));
 				echo 'Transferred '.$reserve_surplus.' '.$CFG->currencies[$wallet['c_currency']]['currency'].' to warm wallet. TX: '.$response.PHP_EOL;
 			}
 		}
@@ -229,7 +229,7 @@ foreach ($wallets as $wallet) {
 			
 			foreach ($transaction['details'] as $detail) {
 				if ($detail['category'] == 'send') {
-					$detail['fee'] = abs($detail['fee']);
+					$detail['fee'] = round(abs($detail['fee']),8,PHP_ROUND_HALF_UP);
 					if ($detail['fee'] > 0) {
 						$transfer_fees += $detail['fee'];
 						db_insert('fees',array('fee'=>$detail['fee'],'date'=>date('Y-m-d H:i:s')));
@@ -237,7 +237,7 @@ foreach ($wallets as $wallet) {
 				}
 			}
 			
-			Wallet::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred,'total_btc'=>(0 - $transfer_fees)));
+			Wallet::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred - $transfer_fees,'total_btc'=>(0 - $transfer_fees)));
 			echo 'Transferred '.$reserve_surplus.' '.$CFG->currencies[$wallet['c_currency']]['currency'].' to warm wallet. TX: '.$response.PHP_EOL;
 		}
 	}

@@ -191,7 +191,7 @@ foreach ($wallets as $wallet) {
 		echo 'Total '.$CFG->currencies[$wallet['c_currency']]['currency'].' received: '.$total_received.PHP_EOL;
 		$update = Wallets::sumFields($wallet['id'],array('hot_wallet_btc'=>$total_received,'total_btc'=>$total_received));
 		
-		if (($reserve['hot_wallet_btc'] + $total_received) > $CFG->bitcoin_reserve_min && $warm_wallet && $reserve_surplus > 0) {
+		if ($reserve_surplus > $CFG->bitcoin_reserve_min) {
 			$bitcoin->walletpassphrase($wallet['bitcoin_passphrase'],3);
 			$response = $bitcoin->sendfrom($wallet['bitcoin_accountname'],$warm_wallet,floatval($reserve_surplus));
 			$transferred = 0;
@@ -216,7 +216,7 @@ foreach ($wallets as $wallet) {
 			}
 		}
 	}
-	elseif ($reserve['hot_wallet_btc'] > $CFG->bitcoin_reserve_min && $warm_wallet && $reserve_surplus > 0) {
+	elseif ($reserve_surplus > $CFG->bitcoin_reserve_min) {
 		$bitcoin->walletpassphrase($wallet['bitcoin_passphrase'],3);
 		$response = $bitcoin->sendfrom($wallet['bitcoin_accountname'],$warm_wallet,floatval($reserve_surplus));
 		$transferred = 0;

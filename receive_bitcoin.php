@@ -211,7 +211,7 @@ foreach ($wallets as $wallet) {
 					}
 				}
 				
-				Wallet::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred - $transfer_fees,'total_btc'=>(0 - $transfer_fees)));
+				Wallets::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred - $transfer_fees,'total_btc'=>(0 - $transfer_fees)));
 				echo 'Transferred '.$reserve_surplus.' '.$CFG->currencies[$wallet['c_currency']]['currency'].' to warm wallet. TX: '.$response.PHP_EOL;
 			}
 		}
@@ -237,7 +237,7 @@ foreach ($wallets as $wallet) {
 				}
 			}
 			
-			Wallet::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred - $transfer_fees,'total_btc'=>(0 - $transfer_fees)));
+			Wallets::sumFields($wallet['id'],array('hot_wallet_btc'=>(0 - $transferred - $transfer_fees),'warm_wallet_btc'=>$transferred - $transfer_fees,'total_btc'=>(0 - $transfer_fees)));
 			echo 'Transferred '.$reserve_surplus.' '.$CFG->currencies[$wallet['c_currency']]['currency'].' to warm wallet. TX: '.$response.PHP_EOL;
 		}
 	}

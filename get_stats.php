@@ -21,7 +21,7 @@ foreach ($wallets as $wallet) {
 	curl_close($ch);
 	$data = json_decode($data1,true);
 
-	db_update('wallets',$wallet['id'],array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'total_btc'=>$data['supply'],'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
+	db_update('wallets',$wallet['id'],array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'global_btc'=>$data['supply'],'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
 }
 
 // GET FIAT EXCHANGE RATES

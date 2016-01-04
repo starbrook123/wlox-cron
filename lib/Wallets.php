@@ -41,7 +41,7 @@ class Wallets {
 	
 		$reserve_ratio = ($CFG->bitcoin_reserve_ratio) ? $CFG->bitcoin_reserve_ratio : '0';
 		$reserve_min = ($CFG->bitcoin_reserve_min) ? $CFG->bitcoin_reserve_min : '0';
-		$sql = 'SELECT (hot_wallet_btc - ((total_btc * '.$reserve_ratio.') + pending_withdrawals) - bitcoin_sending_fee - '.$reserve_min.') AS surplus, hot_wallet_btc FROM wallets WHERE id = '.$wallet_id;
+		$sql = 'SELECT (hot_wallet_btc - ((total_btc * '.$reserve_ratio.') + pending_withdrawals + '.$reserve_min.') - bitcoin_sending_fee) AS surplus, hot_wallet_btc FROM wallets WHERE id = '.$wallet_id;
 		$result = db_query_array($sql);
 		if (!$result)
 			return 0;

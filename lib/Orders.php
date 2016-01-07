@@ -1185,9 +1185,9 @@ class Orders {
 		db_commit();
 		
 		if ($max_price > 0)
-			db_update('currencies',$c_currency1,array('usd_ask'=>($max_price * $usd_info['usd_ask'])));
+			db_update('currencies',$c_currency1,array('usd_ask'=>($max_price * $currency_info['usd_ask'])));
 		if ($min_price > 0)
-			db_update('currencies',$c_currency1,array('usd_bid'=>($min_price * $usd_info['usd_ask'])));
+			db_update('currencies',$c_currency1,array('usd_bid'=>($min_price * $currency_info['usd_ask'])));
 		
 		if ($hidden_executions && !$external_transaction) {
 			foreach ($hidden_executions as $comp_order) {

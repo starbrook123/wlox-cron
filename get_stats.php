@@ -10,18 +10,48 @@ if (!$wallets)
 	exit;
 
 // GET CRYPTO GLOBAL STATS
-foreach ($wallets as $wallet) {
-	$ch = curl_init();
-	curl_setopt($ch,CURLOPT_URL,'http://coinmarketcap-nexuist.rhcloud.com/api/'.strtolower($CFG->currencies[$wallet['c_currency']]['currency']));
-	curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
-	curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
-	curl_setopt($ch,CURLOPT_TIMEOUT,10);
-	curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false);
-	$data1 = curl_exec($ch);
-	curl_close($ch);
-	$data = json_decode($data1,true);
+$ch = curl_init();
+curl_setopt($ch,CURLOPT_URL,'http://coinmarketcap.northpole.ro/api/v5/all.json');
+curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+curl_setopt($ch,CURLOPT_TIMEOUT,10);
+curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false);
+$data1 = curl_exec($ch);
+curl_close($ch);
+$data = json_decode($data1,true);
 
-	db_update('wallets',$wallet['id'],array('trade_volume'=>($data['volume']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']),'global_btc'=>$data['supply'],'market_cap'=>($data['market_cap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'])));
+foreach ($wallets as $wallet) {
+	$market_data = array();
+	foreach ($data['markets'] as $market) {
+		if ($market['symbol'] == $CFG->currencies[$wallet['c_currency']]['currency']) {
+			$market_data = $market;
+			break;
+		}
+	}
+	
+	if (count($market_data) == 0)
+		continue;
+	
+	if (!($market_data['volume24']['usd'] > 0)) {
+		$ch = curl_init();
+		curl_setopt($ch,CURLOPT_URL,'http://coinmarketcap-nexuist.rhcloud.com/api/'.strtolower($CFG->currencies[$wallet['c_currency']]['currency']));
+		curl_setopt($ch,CURLOPT_RETURNTRANSFER,1);
+		curl_setopt($ch,CURLOPT_CONNECTTIMEOUT,10);
+		curl_setopt($ch,CURLOPT_TIMEOUT,10);
+		curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false);
+		$data1 = curl_exec($ch);
+		curl_close($ch);
+		$data2 = json_decode($data1,true);
+		
+		if ($data2 && $data2['volume']['usd'] > 0)
+			$market_data['volume24']['usd'] = $data2['volume']['usd'];
+	}
+	
+	$update_data = array('global_btc'=>$market_data['availableSupplyNumber'],'market_cap'=>($market_data['marketCap']['usd']/$CFG->currencies[$main['fiat']]['usd_ask']));
+	if (!empty($market_data['volume24']['usd']) && $market_data['volume24']['usd'] > 0)
+		$update_data['trade_volume'] = $market_data['volume24']['usd']/$CFG->currencies[$main['fiat']]['usd_ask'];
+	
+	db_update('wallets',$wallet['id'],$update_data);
 }
 
 // GET FIAT EXCHANGE RATES

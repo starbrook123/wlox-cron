@@ -44,7 +44,7 @@ foreach ($CFG->currencies as $currency_id => $currency) {
 	$btc_1h_s[$currency_id] = '0';
 	$btc_1h_b[$currency_id] = '0';
 	
-	db_update('wallets',1,array('btc_24h'=>0,'btc_24h_s'=>0,'btc_24h_b'=>0,'btc_1h'=>0,'btc_1h_s'=>0,'btc_1h_b'=>0));
+	db_update('wallets',$wallets[$CFG->currencies[$currency_id]['currency']]['id'],array('btc_24h'=>0,'btc_24h_s'=>0,'btc_24h_b'=>0,'btc_1h'=>0,'btc_1h_s'=>0,'btc_1h_b'=>0));
 }
 
 

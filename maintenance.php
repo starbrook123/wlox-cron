@@ -158,7 +158,7 @@ if ($CFG->email_notify_fiat_withdrawals == 'Y') {
 			$sql = 'UPDATE requests SET notified = 1 WHERE notified = 0';
 			db_query($sql);
 				
-			$sql = 'UPDATE wallets SET hot_wallet_notified = "Y" WHERE id = 1';
+			$sql = 'UPDATE wallets SET hot_wallet_notified = "Y"';
 			db_query($sql);
 		}
 	}

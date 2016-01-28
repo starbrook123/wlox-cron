@@ -9,7 +9,6 @@ $CFG->in_cron = 1;
 $main = Currencies::getMain();
 $cryptos = Currencies::getCryptos();
 $wallets = Wallets::get();
-
 $btc_24h_main = 0;
 $reserve_ratio = ($CFG->bitcoin_reserve_ratio) ? $CFG->bitcoin_reserve_ratio : '0';
 

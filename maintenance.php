@@ -8,6 +8,7 @@ $CFG->in_cron = 1;
 
 $main = Currencies::getMain();
 $cryptos = Currencies::getCryptos();
+$wallets = Wallets::get();
 $btc_24h_main = 0;
 $reserve_ratio = ($CFG->bitcoin_reserve_ratio) ? $CFG->bitcoin_reserve_ratio : '0';
 
@@ -17,7 +18,6 @@ $sql = "SELECT transactions.c_currency, IFNULL(SUM(btc),0) AS btc_24h, IFNULL(SU
 $result = db_query_array($sql);
 $processed = array();
 if ($result) {
-	$wallets = Wallets::get();
 	foreach ($result as $currency) {
 		$processed[] = $currency['c_currency'];
 		

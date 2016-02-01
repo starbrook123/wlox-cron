@@ -8,6 +8,8 @@ $CFG->in_cron = 1;
 
 $main = Currencies::getMain();
 $cryptos = Currencies::getCryptos();
+$wallets = Wallets::get();
+
 $btc_24h_main = 0;
 $reserve_ratio = ($CFG->bitcoin_reserve_ratio) ? $CFG->bitcoin_reserve_ratio : '0';
 
@@ -17,7 +19,6 @@ $sql = "SELECT transactions.c_currency, IFNULL(SUM(btc),0) AS btc_24h, IFNULL(SU
 $result = db_query_array($sql);
 $processed = array();
 if ($result) {
-	$wallets = Wallets::get();
 	foreach ($result as $currency) {
 		$processed[] = $currency['c_currency'];
 		
@@ -44,7 +45,7 @@ foreach ($CFG->currencies as $currency_id => $currency) {
 	$btc_1h_s[$currency_id] = '0';
 	$btc_1h_b[$currency_id] = '0';
 	
-	db_update('wallets',1,array('btc_24h'=>0,'btc_24h_s'=>0,'btc_24h_b'=>0,'btc_1h'=>0,'btc_1h_s'=>0,'btc_1h_b'=>0));
+	db_update('wallets',$wallets[$CFG->currencies[$currency_id]['currency']]['id'],array('btc_24h'=>0,'btc_24h_s'=>0,'btc_24h_b'=>0,'btc_1h'=>0,'btc_1h_s'=>0,'btc_1h_b'=>0));
 }
 
 
@@ -158,7 +159,7 @@ if ($CFG->email_notify_fiat_withdrawals == 'Y') {
 			$sql = 'UPDATE requests SET notified = 1 WHERE notified = 0';
 			db_query($sql);
 				
-			$sql = 'UPDATE wallets SET hot_wallet_notified = "Y" WHERE id = 1';
+			$sql = 'UPDATE wallets SET hot_wallet_notified = "Y"';
 			db_query($sql);
 		}
 	}

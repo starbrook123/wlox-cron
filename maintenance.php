@@ -165,17 +165,17 @@ if ($CFG->email_notify_fiat_withdrawals == 'Y') {
 }
 
 // subtract withdrawals
-$sql = 'SELECT site_users_balances.balance AS balance, site_users_balances.id AS balance_id, requests.id AS request_id, requests.site_user AS site_user, requests.currency AS currency, ROUND(requests.amount,2) AS amount FROM requests LEFT JOIN site_users_balances ON (site_users_balances.id = requests.site_user AND site_users_balances.currency = requests.currency) WHERE requests.request_type = '.$CFG->request_widthdrawal_id.' AND requests.currency NOT IN ('.implode(',',$cryptos).') AND requests.request_status = '.$CFG->request_pending_id.' AND requests.done = \'Y\'';
+$sql = 'SELECT site_users_balances.balance AS balance, site_users_balances.id AS balance_id, requests.id AS request_id, requests.site_user AS site_user, requests.currency AS currency, ROUND(requests.amount,2) AS amount FROM requests LEFT JOIN site_users_balances ON (site_users_balances.site_user = requests.site_user AND site_users_balances.currency = requests.currency) WHERE requests.request_type = '.$CFG->request_widthdrawal_id.' AND requests.currency NOT IN ('.implode(',',$cryptos).') AND requests.request_status = '.$CFG->request_pending_id.' AND requests.done = \'Y\'';
 $result = db_query_array($sql);
 if ($result) {
 	foreach ($result as $row) {
 		if (empty($old_balance[$row['site_user']][$row['currency']]))
-			$old_balance[$row['site_user']][$row['currency']] = $row[$row['currency']];
+			$old_balance[$row['site_user']][$row['currency']] = $row['balance'];
 		
-		$sql = 'UPDATE site_users_balances SET balance = balance - '.$row['amount'].' WHERE id = '.$row['balance_id'];
+		$sql = 'UPDATE site_users_balances SET balance = balance - '.number_format($row['amount'],8,'.','').' WHERE id = '.$row['balance_id'];
 		db_query($sql);
 		
-		$sql = 'UPDATE history SET balance_before = '.$old_balance[$row['site_user']][$row['currency']].', balance_after = '.($old_balance[$row['site_user']][$row['currency']] - $row['amount']).' WHERE request_id = '.$row['request_id'];
+		$sql = 'UPDATE history SET balance_before = '.number_format($old_balance[$row['site_user']][$row['currency']],8,'.','').', balance_after = '.number_format(($old_balance[$row['site_user']][$row['currency']] - $row['amount']),8,'.','').' WHERE request_id = '.$row['request_id'];
 		db_query($sql);
 		
 		$old_balance[$row['site_user']][$row['currency']] = $old_balance[$row['site_user']][$row['currency']] - $row['amount'];

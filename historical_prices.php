@@ -27,7 +27,7 @@ $wallets = array('BTC'=>$btc_wallet) + $wallets;
 // QUANDL HISTORICAL DATA
 foreach ($wallets as $wallet) {
 	if ($CFG->currencies[$wallet['c_currency']]['currency'] == 'BTC')
-		$url = 'https://www.quandl.com/api/v3/datasets/BAVERAGE/USD.csv';
+		$url = 'https://www.quandl.com/api/v3/datasets/BTCE/USDBTC.csv';
 	else
 		$url = 'https://www.quandl.com/api/v3/datasets/CRYPTOCHART/'.$CFG->currencies[$wallet['c_currency']]['currency'].'.csv';
 	

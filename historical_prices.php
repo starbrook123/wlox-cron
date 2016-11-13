@@ -74,7 +74,7 @@ foreach ($wallets as $wallet) {
 			$rows1[] = '('.implode(',',$row).')';
 		}
 		
-		$sql = 'INSERT INTO historical_data ('.implode(',',array_keys($rows[0])).') VALUES '.implode(',',$rows1).' ON DUPLICATE KEY UPDATE c_currency = VALUES(c_currency), date = VALUES(date), usd = VALUES(usd)';
+		$sql = 'INSERT INTO historical_data (c_currency,`date`,usd) VALUES '.implode(',',$rows1).' ON DUPLICATE KEY UPDATE c_currency = VALUES(c_currency), date = VALUES(date), usd = VALUES(usd)';
 		db_query($sql);
 	}
 }

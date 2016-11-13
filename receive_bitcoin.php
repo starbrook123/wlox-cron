@@ -28,7 +28,7 @@ if ($result) {
 
 foreach ($wallets as $wallet) {
 	$total_received = 0;
-	$bitcoin = new Bitcoin($wallet['bitcoin_username'],$wallet['bitcoin_passphrase'],$wallet['bitcoin_host'],$wallet['bitcoin_port'],$wallet['bitcoin_protocol']);
+	$bitcoin = new Bitcoin($wallet['bitcoin_username'],$wallet['bitcoin_passphrase'],'localhost',$wallet['bitcoin_port'],$wallet['bitcoin_protocol']);
 	$bitcoin->settxfee($wallet['bitcoin_sending_fee']);
 	
 	$email = SiteEmail::getRecord('new-deposit');

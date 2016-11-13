@@ -18,7 +18,7 @@ if (!$wallets) {
 }
 
 foreach ($wallets as $wallet) {
-	$bitcoin = new Bitcoin($wallet['bitcoin_username'],$wallet['bitcoin_passphrase'],$wallet['bitcoin_host'],$wallet['bitcoin_port'],$wallet['bitcoin_protocol']);
+	$bitcoin = new Bitcoin($wallet['bitcoin_username'],$wallet['bitcoin_passphrase'],'localhost',$wallet['bitcoin_port'],$wallet['bitcoin_protocol']);
 	$bitcoin->settxfee($wallet['bitcoin_sending_fee']);
 	$available = $wallet['hot_wallet_btc'];
 	$deficit = $wallet['deficit_btc'];

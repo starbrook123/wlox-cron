@@ -46,7 +46,7 @@ class BitcoinAddresses{
 		
 		if (!self::$bitcoin) {
 			require_once('easybitcoin.php');
-			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,$CFG->bitcoin_host,$CFG->bitcoin_port,$CFG->bitcoin_protocol);
+			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,'localhost',$CFG->bitcoin_port,$CFG->bitcoin_protocol);
 		}
 		else
 			$bitcoin = self::$bitcoin;
@@ -77,7 +77,7 @@ class BitcoinAddresses{
 		
 		if (!self::$bitcoin) {
 			require_once('easybitcoin.php');
-			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,$CFG->bitcoin_host,$CFG->bitcoin_port,$CFG->bitcoin_protocol);
+			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,'localhost',$CFG->bitcoin_port,$CFG->bitcoin_protocol);
 		}
 		else
 			$bitcoin = self::$bitcoin;
@@ -104,7 +104,7 @@ class BitcoinAddresses{
 		
 		if (!self::$bitcoin) {
 			require_once('easybitcoin.php');
-			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,$CFG->bitcoin_host,$CFG->bitcoin_port,$CFG->bitcoin_protocol);
+			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,'localhost',$CFG->bitcoin_port,$CFG->bitcoin_protocol);
 		}
 		else
 			$bitcoin = self::$bitcoin;
@@ -169,7 +169,7 @@ class BitcoinAddresses{
 	
 		if (!self::$bitcoin) {
 			require_once('easybitcoin.php');
-			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,$CFG->bitcoin_host,$CFG->bitcoin_port,$CFG->bitcoin_protocol);
+			$bitcoin = new Bitcoin($CFG->bitcoin_username,$CFG->bitcoin_passphrase,'localhost',$CFG->bitcoin_port,$CFG->bitcoin_protocol);
 		}
 		else
 			$bitcoin = self::$bitcoin;
